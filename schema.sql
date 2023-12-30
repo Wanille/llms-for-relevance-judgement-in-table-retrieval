@@ -97,3 +97,47 @@ CREATE TABLE if not exists "qrels"
     "json_loc" text not null,
     "relevancy" int not null
 );
+
+-- -------------------------------------
+-- Table "qrels_entities"
+-- -------------------------------------
+CREATE TABLE if not exists "qrels_entities"
+(
+    "topic" int not null,
+    "iteration" int,
+    "json_loc" text not null,
+    "relevancy" int not null
+);
+
+-- -------------------------------------
+-- Table "qrels_page_title"
+-- -------------------------------------
+CREATE TABLE if not exists "qrels_page_title"
+(
+    "topic" int not null,
+    "iteration" int,
+    "json_loc" text not null,
+    "relevancy" int not null
+);
+
+-- -------------------------------------
+-- Table "qrels_text_after"
+-- -------------------------------------
+CREATE TABLE if not exists "qrels_text_after"
+(
+    "topic" int not null,
+    "iteration" int,
+    "json_loc" text not null,
+    "relevancy" int not null
+);
+
+-- -------------------------------------
+-- Table "qrels_text_before"
+-- -------------------------------------
+CREATE TABLE if not exists "qrels_text_before"
+(
+    "topic" int not null,
+    "iteration" int,
+    "json_loc" text not null,
+    "relevancy" int not null
+);

@@ -14,8 +14,6 @@ def generate_qrels(system_instructions: str, instruction_pattern: str, topic_id:
     fp = open(fn, "a")
 
     for idx, hr_table in enumerate(human_rated_tables):
-        if idx < 76:
-            continue
         instruction = re.sub(r"\$TOPIC", hr_table.query, instruction_pattern) 
         table_str = json.dumps(hr_table.table.relation).encode('unicode-escape').decode()
         instruction = re.sub(r"\$TABLE", table_str, instruction)
@@ -26,8 +24,6 @@ def generate_qrels(system_instructions: str, instruction_pattern: str, topic_id:
                 rating = 0
             if response == "Relevant (1)":
                 rating = 1
-            if response == "Highly Relevant (2)":
-                rating = 2
             if rating == None:
                 print("Error Response: ", response)
                 continue
@@ -52,9 +48,8 @@ if __name__ == '__main__':
     system_instructions = """
         You are an expert assessor making relevance judgments. You will be given a TREC topic and a table from a web page. 
         If this table provides no information about the topic (i.e., based on the context you would not expect this to be shown as a result from a search engine), answer “Irrelevant (0)”
-        If this table provides relevant information about the topic (i.e., you would expect this Web page to be included in the search results from a search engine but not among the top results), answer “Relevant (1)”. 
-        If this table provides ideal information about the topic (i.e, you would expect this Web page ranked near the top of the search results), answer “Highly Relevant (2)”. 
+        If this table provides relevant information about the topic (i.e., you would expect this Web page to be included in the search results from a search engine), answer “Relevant (1)”. 
         """
     
     instruction_pattern = "Topic: '$TOPIC'\nTable: ```\n$TABLE\n```\nRelevant?" 
-    generate_qrels(system_instructions, instruction_pattern, 1, "runs/first_run_with_balanced_sample.txt")
+    generate_qrels(system_instructions, instruction_pattern, 1, "runs/first_run_with_balanced_sample_bin.txt")

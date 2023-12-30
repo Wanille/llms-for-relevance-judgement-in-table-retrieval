@@ -1,11 +1,13 @@
 from itertools import repeat
 import json
 from typing import Iterator
-from tools import config, connect, read_trec_queries, read_trec_qrels
+from tools import config, connect, read_trec_queries, read_trec_qrels, remove_empty_cols, remove_empty_rows
+import tiktoken
 
 BATCH_SIZE = 10000
 
 def main():
+
     global BATCH_SIZE
     params = config()
     conn, cur = connect(params) 
@@ -13,19 +15,7 @@ def main():
 
     # Create the db schema
     cur.execute(db_schema)
-    conn.commit()
-
-    # insert into table trec_queries
-    queries = read_trec_queries("rel_files/queries.txt")
-    for qid, query in queries.items():
-        cur.execute(f"INSERT INTO queries VALUES ({qid}, '{query}')")
-    conn.commit()
-
-    # insert into table trec_qrels
-    qrels = read_trec_qrels("rel_files/rel_table_qrels.txt")
-    for topic, it, doc, rel in qrels:
-        cur.execute("INSERT INTO qrels VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
-    conn.commit()
+    conn.commit() 
 
     # Insert into tables table, table_meta, text_before, text_after, table_entities
     json_it = read_jsonl("web_tables.json")
@@ -37,9 +27,19 @@ def main():
     table_entities_list = []
     page_title_list = []
 
+    removed_tables = set()
+
+    enc = tiktoken.encoding_for_model("gpt-3.5-turbo-0613")
+
     for idx, table_json in enumerate(json_it, start=1):
         table_extracted = extract_values(table_json)
-        table_list.append(table_extracted[0]) 
+        table = table_extracted[0]
+
+        # Check length of input 
+        if len(enc.encode(table[2])) > (16385 - 100): # 100 reserved for other words in query 
+            removed_tables.add(table[0])
+            continue 
+        table_list.append(table) 
         table_meta_list.append(table_extracted[1])
         text_before_list.append(table_extracted[2])
         text_after_list.append(table_extracted[3])
@@ -61,6 +61,51 @@ def main():
             table_entities_list.clear() 
             page_title_list.clear()
             conn.commit()
+        
+    print(f"Finished inserting tables, {len(removed_tables)} skipped due to token length greater then 16285.")
+
+    # insert into table trec_queries
+    queries = read_trec_queries("rel_files/queries.txt")
+    for qid, query in queries.items():
+        cur.execute(f"INSERT INTO queries VALUES ({qid}, '{query}')")
+    conn.commit()
+
+    # insert into table trec_qrels
+    qrels = read_trec_qrels("rel_files/rel_table_qrels.txt")
+    for topic, it, doc, rel in qrels:
+        if doc in removed_tables:
+            continue
+        cur.execute("INSERT INTO qrels VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
+    conn.commit()
+
+    # insert into table qrels_entities
+    qrels_entity = read_trec_qrels("rel_files/rel_entity_qrels.txt")
+    for topic, it, doc, rel in qrels_entity:
+        if doc in removed_tables:
+            continue
+        cur.execute("INSERT INTO qrels_entities VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
+    conn.commit()
+
+    qrels_pt = read_trec_qrels("rel_files/rel_PageTitle_qrels.txt")
+    for topic, it, doc, rel in qrels_pt:
+        if doc in removed_tables:
+            continue
+        cur.execute("INSERT INTO qrels_page_title VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
+    conn.commit()
+
+    qrels_ta = read_trec_qrels("rel_files/rel_textAfter_qrels.txt")
+    for topic, it, doc, rel in qrels_ta:
+        if doc in removed_tables:
+            continue
+        cur.execute("INSERT INTO qrels_text_after VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
+    conn.commit()
+
+    qrels_tb = read_trec_qrels("rel_files/rel_textBefore_qrels.txt")
+    for topic, it, doc, rel in qrels_tb:
+        if doc in removed_tables:
+            continue
+        cur.execute("INSERT INTO qrels_text_before VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
+    conn.commit()
 
     cur.close()
     conn.close()
@@ -90,6 +135,9 @@ def load_db_schema(fn: str = "schmema.sql") -> str:
 
 
 def extract_values(table_json: dict):
+
+    remove_empty_rows(table_json["relation"])
+    remove_empty_cols(table_json["relation"])
 
     table = (
         table_json["json_loc"],
