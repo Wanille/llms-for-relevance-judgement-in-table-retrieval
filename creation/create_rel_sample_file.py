@@ -1,8 +1,8 @@
-from tools import read_trec_qrels, connect, config
+from LLmsfJiT import read_trec_qrels, connect, config
 from random import sample
 
-params = config("database.ini")
-conn, cur = connect(params)
+params = config("../database.ini")
+conn, cur = connect(params["postgres"])
 
 def main():
     cur.execute("SELECT * FROM qrels")

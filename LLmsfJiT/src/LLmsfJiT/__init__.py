@@ -2,10 +2,13 @@ from io import TextIOWrapper
 import psycopg2
 from configparser import ConfigParser
 from dataclasses import dataclass
-from openai import OpenAI
-from OPENAI_API_KEY import OPENAI_API_KEY 
+from openai import OpenAI 
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = None
+
+def load_client(OPENAI_API_KEY: str):
+    global client
+    client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 @dataclass
@@ -52,11 +55,14 @@ def config(fn: str = "database.ini") -> dict:
     """
     parser = ConfigParser()
     parser.read(fn)
-    db = {}
-    params = parser.items(section="postgresql")
-    for param in params:
-        db[param[0]] = param[1]
-    return db
+    sections = {}
+    for section in parser.sections():
+        section_params = {}
+        params = parser.items(section=section)
+        for param in params:
+            section_params[param[0]] = param[1]
+        sections[section] = section_params
+    return sections
 
 def read_trec_qrels(fn: str) -> dict:
     qrels_data = []
@@ -172,6 +178,8 @@ def get_tables_from_qrels(conn, cur, qrels_fn: str) -> list[RatedTable]:
                 relevancy=j[3]
             )
         )
+    
+    cur.execute("DROP TABLE temp_qrels")
 
     return human_rated_tables 
 
@@ -191,7 +199,11 @@ def get_rated_modalities_for_rated_table(cur, tables: list[RatedTable]):
         relevancies.append(r_dict)
     return relevancies
    
+
+
 def send_request(system_instructions: str, instructions: str) -> str:
+    if client is None:
+        raise ConnectionError("Load OpenAi client first using `load_client(OPENAI_API_KEY)`") 
     response = client.chat.completions.create(
     model="gpt-3.5-turbo-16k",
     messages=[
@@ -203,6 +215,8 @@ def send_request(system_instructions: str, instructions: str) -> str:
     return response.choices[0].message.content 
 
 def send_plain_request(instructions: str) -> str:
+    if client is None:
+        raise ConnectionError("Load OpenAi client first using `load_client(OPENAI_API_KEY)`") 
     response = client.chat.completions.create(
     model="gpt-3.5-turbo-16k",
     messages=[
@@ -213,6 +227,8 @@ def send_plain_request(instructions: str) -> str:
     return response.choices[0].message.content 
 
 def send_request_messages(messages: list[dict[str]]) -> str:
+    if client is None:
+        raise ConnectionError("Load OpenAi client first using `load_client(OPENAI_API_KEY)`") 
     response = client.chat.completions.create(
     model="gpt-3.5-turbo-16k",
     messages=messages,

@@ -1,13 +1,12 @@
-from tools import config, connect, get_tables_from_qrels, send_request, RatedTable, get_rated_modalities_for_rated_table
+from LLmsfJiT import config, connect, get_tables_from_qrels, send_request, RatedTable, get_rated_modalities_for_rated_table
 import re
 import json
 from openai import OpenAI
 from OPENAI_API_KEY import OPENAI_API_KEY 
 
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-params = config("database.ini")
-conn, cur = connect(params)
+params = config("../database.ini")
+client = OpenAI(api_key=params["openai"]["apikey"])
+conn, cur = connect(params["postgres"])
 
 def generate_qrels(system_instructions: str, instruction_pattern: str, fn: str):
     human_rated_tables = get_tables_from_qrels(conn, cur, "rel_files/rel_table_qrels_sample_balanced.txt")
@@ -90,4 +89,4 @@ if __name__ == '__main__':
         ```
         Relevant?
     """
-    generate_qrels(system_instructions, instruction_pattern, "runs/balanced_sample_bin")
+    generate_qrels(system_instructions, instruction_pattern, "../gpt_judgements/balanced_sample_bin")

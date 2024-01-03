@@ -1,10 +1,11 @@
 import psycopg2
-from tools import config, connect, get_tables_from_qrels, send_plain_request, RatedTable
+from LLmsfJiT import config, connect, get_tables_from_qrels, send_plain_request, RatedTable, load_client
 import re
 import json
 
-params = config("database.ini")
-conn, cur = connect(params)
+params = config("../database.ini")
+load_client(params["openai"]["apikey"])
+conn, cur = connect(params["postgres"])
 
 def generate_qrels(instruction_pattern: str, fn: str):
     human_rated_tables = get_tables_from_qrels(conn, cur, "rel_files/rel_table_qrels_sample_balanced.txt")
@@ -59,4 +60,4 @@ if __name__ == '__main__':
         $TABLE
         ```
         Relevant?"""  
-    generate_qrels(instruction_pattern, "runs/first_run_with_balanced_sample_bin_no_sys.txt")
+    generate_qrels(instruction_pattern, "../gpt_judgements/first_run_with_balanced_sample_bin_no_sys.txt")

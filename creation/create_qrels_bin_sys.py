@@ -1,12 +1,13 @@
 import psycopg2
-from tools import config, connect, get_tables_from_qrels, send_request, RatedTable, Table, remove_empty_rows, remove_empty_cols
+from LLmsfJiT import config, connect, get_tables_from_qrels, send_request, RatedTable, Table, remove_empty_rows, remove_empty_cols, load_client
 import pandas as pd
 import re
 from random import shuffle, sample
 import json
 
-params = config("database.ini")
-conn, cur = connect(params)
+params = config("../database.ini")
+load_client(params["openai"]["apikey"])
+conn, cur = connect(params["postgres"])
 
 def generate_qrels(system_instructions: str, instruction_pattern: str, fn: str):
     human_rated_tables = get_tables_from_qrels(conn, cur, "rel_files/rel_table_qrels_sample_balanced.txt")
@@ -24,8 +25,6 @@ def generate_qrels(system_instructions: str, instruction_pattern: str, fn: str):
                 rating = 0
             if response == "Relevant (1)":
                 rating = 1
-            if response == "Highly Relevant (2)":
-                rating = 2
             if rating == None:
                 print("Error Response: ", response)
                 continue
@@ -50,9 +49,8 @@ if __name__ == '__main__':
     system_instructions = """
         You are an expert assessor making relevance judgments on the topic of '$TOPIC'. You will be given a table from a web page. 
         If this table provides no information about '$TOPIC' (i.e., based on the context you would not expect this to be shown as a result from a search engine), answer “Irrelevant (0)”
-        If this table provides relevant information about '$TOPIC' (i.e., you would expect this Web page to be included in the search results from a search engine but not among the top results), answer “Relevant (1)”. 
-        If this table provides ideal information about '$TOPIC' (i.e, you would expect this Web page ranked near the top of the search results), answer “Highly Relevant (2)”.
+        If this table provides relevant information about '$TOPIC' (i.e., you would expect this Web page to be included in the search results from a search engine), answer “Relevant (1)”. 
         """
     
     instruction_pattern = "Table: ```\n$TABLE\n```\nRelevant?" 
-    generate_qrels(system_instructions, instruction_pattern, "runs/first_run_with_balanced_sample_sys.txt")
+    generate_qrels(system_instructions, instruction_pattern, "../gpt_judgements/first_run_with_balanced_sample_bin_sys.txt")

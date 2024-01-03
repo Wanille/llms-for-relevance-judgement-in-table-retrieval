@@ -1,7 +1,7 @@
 from itertools import repeat
 import json
 from typing import Iterator
-from tools import config, connect, read_trec_queries, read_trec_qrels, remove_empty_cols, remove_empty_rows
+from LLmsfJiT import config, connect, read_trec_queries, read_trec_qrels, remove_empty_cols, remove_empty_rows
 import tiktoken
 
 BATCH_SIZE = 10000
@@ -10,7 +10,7 @@ def main():
 
     global BATCH_SIZE
     params = config()
-    conn, cur = connect(params) 
+    conn, cur = connect(params["postgres"]) 
     db_schema = load_db_schema("schema.sql")
 
     # Create the db schema

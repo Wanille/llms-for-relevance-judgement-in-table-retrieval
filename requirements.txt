@@ -5,3 +5,4 @@ pandas
 tiktoken
 jinja2
 statsmodels
+python-terrier
