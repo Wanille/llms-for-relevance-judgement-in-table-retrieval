@@ -1,4 +1,6 @@
 from io import TextIOWrapper
+import json
+from typing import Iterator
 import psycopg2
 from configparser import ConfigParser
 from dataclasses import dataclass
@@ -259,3 +261,20 @@ def remove_empty_cols(table: list):
     for row in table:
         for idx in cols_to_drop:
             del row[idx]
+
+
+def read_jsonl(fn: str) -> Iterator[dict]:
+    with open(fn, "r") as fp:
+        line = fp.readline()
+        continue_reading = True
+        while continue_reading:
+            line = fp.readline()
+            if line == "":
+                continue_reading = False
+                continue
+            try:
+                js = json.loads(line)
+                yield js
+            except json.JSONDecodeError as ex:
+                print(f"Error when decoding JSON: {line}")
+                continue
