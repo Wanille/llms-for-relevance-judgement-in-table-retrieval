@@ -71,4 +71,4 @@ if __name__ == '__main__':
         Relevant?
     """
     
-    generate_qrels(system_instructions, "../gpt_judgements/balanced_sample_bin")
+    generate_qrels(system_instructions, "../gpt_judgements/ex_qrels_bin")
