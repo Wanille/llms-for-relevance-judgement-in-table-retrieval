@@ -1,12 +1,19 @@
-DROP TABLE IF EXISTS "web_table";
-DROP TABLE IF EXISTS "table_meta";
-DROP TABLE IF EXISTS "text_before";
-DROP TABLE IF EXISTS "text_after";
-DROP TABLE IF EXISTS "table_entities";
-DROP TABLE IF EXISTS "page_title";
-DROP TABLE IF EXISTS "queries";
-DROP TABLE IF EXISTS "qrels";
-DROP TABLE IF EXISTS "trec_qrels";
+-- DROP TABLE IF EXISTS "web_table";
+-- DROP TABLE IF EXISTS "table_meta";
+-- DROP TABLE IF EXISTS "text_before";
+-- DROP TABLE IF EXISTS "text_after";
+-- DROP TABLE IF EXISTS "table_entities";
+-- DROP TABLE IF EXISTS "page_title";
+ DROP TABLE IF EXISTS "page_url";
+-- DROP TABLE IF EXISTS "queries";
+-- DROP TABLE IF EXISTS "qrels";
+-- DROP TABLE IF EXISTS "qrels_entities";
+-- DROP TABLE IF EXISTS "qrels_page_title";
+-- DROP TABLE IF EXISTS "qrels_text_after";
+-- DROP TABLE IF EXISTS "qrels_text_before";
+
+
+
 
 -- -------------------------------------
 -- Table "table"
@@ -79,6 +86,17 @@ CREATE TABLE if not exists "page_title"
 );
 
 -- -------------------------------------
+-- Table "page_url"
+-- -------------------------------------
+CREATE TABLE if not exists "page_url"
+(
+    "json_loc" text not null,
+    "url" text,
+    primary key ("json_loc")
+); 
+
+
+-- -------------------------------------
 -- Table "queries"
 -- -------------------------------------
 CREATE TABLE if not exists "queries"
@@ -141,3 +159,5 @@ CREATE TABLE if not exists "qrels_text_before"
     "json_loc" text not null,
     "relevancy" int not null
 );
+
+

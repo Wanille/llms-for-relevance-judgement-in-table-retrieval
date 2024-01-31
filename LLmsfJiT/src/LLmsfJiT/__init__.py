@@ -24,6 +24,13 @@ class Table:
     text_before: str = None
     text_after: str = None
     entities: str = None
+    header_pos: str = None
+    header_row_index: int = None
+    table_orientation: str = None
+    page_url: str = None
+    has_key_column: bool = None
+    key_column_index: int = None
+
     
 
 @dataclass
@@ -137,12 +144,13 @@ def get_tables_from_qrels(conn, cur, qrels_fn: str) -> list[RatedTable]:
     conn.commit()
 
     q = f"""
-        SELECT wt.json_loc, pt.page_title, wt.title, wt.relation, wt.table_type, tm.has_header, tb.text_before, ta.text_after, te.entities FROM web_table wt 
+        SELECT wt.json_loc, pt.page_title, tb.text_before, wt.title, wt.relation, tm.has_header, tm.header_pos, tm.header_row_index, te.entities, ta.text_after, tm.table_orientation, pu.url, tm.has_key_column, tm.key_column_index t FROM web_table wt 
         JOIN page_title pt on wt.json_loc=pt.json_loc
         JOIN table_meta tm on wt.json_loc=tm.json_loc
         JOIN text_before tb on wt.json_loc=tb.json_loc
         JOIN text_after ta on wt.json_loc=ta.json_loc
         JOIN table_entities te on wt.json_loc=te.json_loc
+        JOIN page_url pu on wt.json_loc=pu.json_loc
         RIGHT JOIN temp_qrels tq on wt.json_loc=tq.json_loc
         """
     
@@ -152,14 +160,19 @@ def get_tables_from_qrels(conn, cur, qrels_fn: str) -> list[RatedTable]:
     for res in results:
         tables[res[0]] = Table(
                 json_loc=res[0],
-                entities=res[8],
-                has_header=res[5],
                 page_title=res[1],
-                relation=res[3],
-                table_type=res[4],
-                text_after=res[7],
-                text_before=res[6],
-                title=res[2]
+                text_before=res[2],
+                title=res[3],
+                relation=res[4],
+                has_header=res[5],
+                header_pos=res[6],
+                header_row_index=res[7],
+                entities=res[8],
+                text_after=res[9],
+                table_orientation=res[10],
+                page_url=res[11],
+                has_key_column=res[12],
+                key_column_index=res[13]
                 ) 
     
     q2 = f"""
@@ -176,8 +189,8 @@ def get_tables_from_qrels(conn, cur, qrels_fn: str) -> list[RatedTable]:
                 table=tables[j[2]],
                 annotator="HUMAN",
                 query=queries[int(j[0])],
-                query_id=j[0],
-                relevancy=j[3]
+                query_id=int(j[0]),
+                relevancy=float(j[3])
             )
         )
     

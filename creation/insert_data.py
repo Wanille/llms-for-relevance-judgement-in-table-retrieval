@@ -9,16 +9,53 @@ BATCH_SIZE = 10000
 def main():
 
     global BATCH_SIZE
-    params = config()
+    params = config("../database.ini")
     conn, cur = connect(params["postgres"]) 
-    db_schema = load_db_schema("schema.sql")
+    db_schema = load_db_schema("../schema.sql")
 
     # Create the db schema
     cur.execute(db_schema)
     conn.commit() 
 
+    # # insert into table trec_queries
+    # queries = read_trec_queries("../rel_files/queries.txt")
+    # for qid, query in queries.items():
+    #     cur.execute(f"INSERT INTO queries VALUES ({qid}, '{query}')")
+    # conn.commit()
+ 
+    # # insert into table trec_qrels
+    qrels = read_trec_qrels("../rel_files/rel_table_qrels.txt")
+ 
+    documents_rated = set(list(zip(*qrels))[2])
+    # print(len(documents_rated))
+ 
+    # for topic, it, doc, rel in qrels:
+    #     cur.execute("INSERT INTO qrels VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
+    # conn.commit()
+     
+    # # insert into table qrels_entities
+    # qrels_entity = read_trec_qrels("../rel_files/rel_entity_qrels.txt")
+    # for topic, it, doc, rel in qrels_entity:
+    #     cur.execute("INSERT INTO qrels_entities VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
+    # conn.commit()
+ 
+    # qrels_pt = read_trec_qrels("../rel_files/rel_PageTitle_qrels.txt")
+    # for topic, it, doc, rel in qrels_pt:
+    #     cur.execute("INSERT INTO qrels_page_title VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
+    # conn.commit()
+ 
+    # qrels_ta = read_trec_qrels("../rel_files/rel_textAfter_qrels.txt")
+    # for topic, it, doc, rel in qrels_ta:
+    #     cur.execute("INSERT INTO qrels_text_after VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
+    # conn.commit()
+ 
+    # qrels_tb = read_trec_qrels("../rel_files/rel_textBefore_qrels.txt")
+    # for topic, it, doc, rel in qrels_tb:
+    #     cur.execute("INSERT INTO qrels_text_before VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
+    # conn.commit()
+
     # Insert into tables table, table_meta, text_before, text_after, table_entities
-    json_it = read_jsonl("web_tables.json")
+    json_it = read_jsonl("../web_tables.json")
 
     table_list = []
     table_meta_list = []
@@ -26,25 +63,23 @@ def main():
     text_after_list = []
     table_entities_list = []
     page_title_list = []
+    page_url_list = []
 
     removed_tables = set()
-
-    enc = tiktoken.encoding_for_model("gpt-3.5-turbo-0613")
 
     for idx, table_json in enumerate(json_it, start=1):
         table_extracted = extract_values(table_json)
         table = table_extracted[0]
+        if table[0] not in documents_rated:
+            continue
 
-        # Check length of input 
-        if len(enc.encode(table[2])) > (16385 - 100): # 100 reserved for other words in query 
-            removed_tables.add(table[0])
-            continue 
         table_list.append(table) 
         table_meta_list.append(table_extracted[1])
         text_before_list.append(table_extracted[2])
         text_after_list.append(table_extracted[3])
         table_entities_list.append(table_extracted[4])
         page_title_list.append(table_extracted[5])
+        page_url_list.append(table_extracted[6])
         
         if idx % BATCH_SIZE == 0:
             print("inserted Batch")
@@ -54,6 +89,7 @@ def main():
             batch_insert(cur, "text_after", text_after_list)
             batch_insert(cur, "table_entities", table_entities_list)
             batch_insert(cur, "page_title", page_title_list)
+            batch_insert(cur, "page_url", page_url_list)
             table_list.clear()
             table_meta_list.clear()
             text_before_list.clear()
@@ -61,56 +97,19 @@ def main():
             table_entities_list.clear() 
             page_title_list.clear()
             conn.commit()
-        
+
+    # batch_insert(cur, "web_table", table_list)
+    # batch_insert(cur, "table_meta", table_meta_list)
+    # batch_insert(cur, "text_before", text_before_list)
+    # batch_insert(cur, "text_after", text_after_list)
+    # batch_insert(cur, "table_entities", table_entities_list)
+    # batch_insert(cur, "page_title", page_title_list)    
+    batch_insert(cur, "page_url", page_url_list)   
+    conn.commit()
     print(f"Finished inserting tables, {len(removed_tables)} skipped due to token length greater then 16285.")
-
-    # insert into table trec_queries
-    queries = read_trec_queries("rel_files/queries.txt")
-    for qid, query in queries.items():
-        cur.execute(f"INSERT INTO queries VALUES ({qid}, '{query}')")
-    conn.commit()
-
-    # insert into table trec_qrels
-    qrels = read_trec_qrels("rel_files/rel_table_qrels.txt")
-    for topic, it, doc, rel in qrels:
-        if doc in removed_tables:
-            continue
-        cur.execute("INSERT INTO qrels VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
-    conn.commit()
-
-    # insert into table qrels_entities
-    qrels_entity = read_trec_qrels("rel_files/rel_entity_qrels.txt")
-    for topic, it, doc, rel in qrels_entity:
-        if doc in removed_tables:
-            continue
-        cur.execute("INSERT INTO qrels_entities VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
-    conn.commit()
-
-    qrels_pt = read_trec_qrels("rel_files/rel_PageTitle_qrels.txt")
-    for topic, it, doc, rel in qrels_pt:
-        if doc in removed_tables:
-            continue
-        cur.execute("INSERT INTO qrels_page_title VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
-    conn.commit()
-
-    qrels_ta = read_trec_qrels("rel_files/rel_textAfter_qrels.txt")
-    for topic, it, doc, rel in qrels_ta:
-        if doc in removed_tables:
-            continue
-        cur.execute("INSERT INTO qrels_text_after VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
-    conn.commit()
-
-    qrels_tb = read_trec_qrels("rel_files/rel_textBefore_qrels.txt")
-    for topic, it, doc, rel in qrels_tb:
-        if doc in removed_tables:
-            continue
-        cur.execute("INSERT INTO qrels_text_before VALUES (%s, %s, %s, %s)", (topic, it, doc, int(float(rel))))
-    conn.commit()
 
     cur.close()
     conn.close()
- 
-
 
 
 def read_jsonl(fn: str) -> Iterator[dict]:
@@ -179,7 +178,12 @@ def extract_values(table_json: dict):
         table_json["pageTitle"]
     )
 
-    return table, table_meta, text_before, text_after, table_entities, page_title
+    page_url = (
+        table_json["json_loc"],
+        table_json["url"]
+    )
+
+    return table, table_meta, text_before, text_after, table_entities, page_title, page_url
 
 def batch_insert(cur, table_name: str, data: list[tuple]):
     """
@@ -194,6 +198,5 @@ def batch_insert(cur, table_name: str, data: list[tuple]):
     cur.execute(f"""INSERT INTO "{table_name}" VALUES """ + (args))
 
 if __name__ == '__main__':
-    print("started")
     main()
     #print(next(read_jsonl("web_tables.json")))

@@ -8,20 +8,11 @@ def main():
     cur.execute("SELECT * FROM qrels")
     qrels = cur.fetchall()
     # qrels = read_trec_qrels("rel_files/rel_table_qrels.txt")
-    qgrades = {
-        0: [],
-        1: [],
-        2: []
-    }
-    for q in qrels:
-       qgrades[q[-1]].append(q) 
+    
+    grels_sample = sample(qrels, 100)
 
-    qgrades_sample = []
-    for key in qgrades.keys():      
-        qgrades_sample.extend(sample(qgrades[key], 30))
-
-    with open("rel_files/rel_table_qrels_sample_balanced.txt", "w") as fp:
-        for q in qgrades_sample:
+    with open("../rel_files/rel_table_qrels_sample_100.txt", "w") as fp:
+        for q in grels_sample:
             fp.write(f"{q[0]}\t{q[1]}\t{q[2]}\t{q[3]}\n")
 
 

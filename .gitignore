@@ -2,3 +2,4 @@ database.ini
 rel_files/
 web_tables.json
 __pycache__/
+pyterrier_indexes/
