@@ -82,6 +82,15 @@ def read_trec_qrels(fn: str) -> dict:
                 qrels_data.append(line)
     return qrels_data
 
+def read_trec_run(fn: str) -> dict:
+    run_data = []
+    with open(fn, 'r') as file:
+        for line in file:
+            line = line.strip().split()
+            if len(line) == 6:
+                run_data.append(line)
+    return run_data
+
 def read_trec_queries(fn: str) -> dict:
     queries = {}
     with open(fn, "r") as fp:

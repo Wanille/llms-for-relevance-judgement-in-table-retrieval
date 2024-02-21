@@ -6,3 +6,4 @@ tiktoken
 jinja2
 statsmodels
 python-terrier
+pytrec_eval
