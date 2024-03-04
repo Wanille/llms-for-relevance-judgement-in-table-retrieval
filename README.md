@@ -2,10 +2,10 @@
 
 
 
-## Steps to reproduce experiments 
+Follow these steps to reproduce the experiments, evaluation and dataset analysis 
 
 
-### Download files 📂
+## Download files 📂
 
 Download the following files and place them inside the `rel_files/` directory.
 - `https://github.com/Zhiyu-Chen/Web-Table-Retrieval-Benchmark/blob/main/data/rel_PageTitle_qrels.txt`
@@ -20,12 +20,12 @@ Download the WTR dump into the root of this Git repository.
 Unzip the dump with `gunzip WTR_tables.tar.gz`.  
 Untar the decompressed directory using `tar -xf WTR_tables.gz`.  
 
-### Setup dependencies 🔧
+## Setup dependencies 🔧
 Install the newest JDK version (e.g. `sudo apt install -y default-jdk`).  
 Setup a postgres instance and create a database called `web_tables`.  
 Install the required python packages from `requirements.txt` 
 
-### Setup the config file 📋
+## Setup the config file 📋
 Into the root of this Git repository add a file called `database.ini`.  
 The file should look like this:
 
@@ -40,18 +40,18 @@ password=POSTGRES_PASSWORD
 apikey=OPENAI_API_KEY
 ```
 
-### Insert the data 📃
+## Insert the data 📃
 Run `cd creation` and `python insert_data.py` to insert your data into the postgres db. 
 
 
-### Run the experiments 🔬
+## Run the experiments 🔬
 
 Now run the experiments by moving into the experiment dir and executing the python scripts :).
 
-### Evaluation 📊
+## Evaluation 📊
 
 All evaluation notebooks can be found under `notebooks/`.
 
-### Dataset analysis 📈
+## Dataset analysis 📈
 
 An additional Notebook analysing table metadata can be found under `dataset_analysis`.
