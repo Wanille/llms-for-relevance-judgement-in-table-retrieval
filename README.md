@@ -46,7 +46,12 @@ Run `cd creation` and `python insert_data.py` to insert your data into the postg
 
 ### Run the experiments
 
-Create the used sample file by using `cd creation`, `python create_rel_sample_file_100.py` and `python create_rel_sample_file_1000.py`.
-
-
 Now run the experiments by moving into the experiment dir and executing the python scripts :).
+
+### Evaluation
+
+All evaluation notebooks can be found under `notebooks/`.
+
+### Dataset analysis
+
+An additional Notebook analysing table metadata can be found under `dataset_analysis`.
